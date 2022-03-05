@@ -1,0 +1,13 @@
+
+
+processing/
+
+build/
+
+.vscode/
+
+draft*
+
+HW*
+
+*.zip
