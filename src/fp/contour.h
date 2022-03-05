@@ -1,6 +1,7 @@
-#include "db/Point.h"
+#include "global.h"
+#include "db/Database.h"
 
-namespace db {
+namespace fp {
 
 class Contour {
 public:
@@ -11,13 +12,13 @@ public:
     double max_x() const;
     double max_y() const;
 
-    std::pair<Point, Point> Update(double x, double width, double height);
+    std::pair<db::Point, db::Point> Update(double x, double width, double height);
 
 private:
     double FindMaxYBetween(double x_begin, double x_end) const;
 
     double max_y_;
-    std::list<Point> coordinates_;
+    std::list<db::Point> coordinates_;
 };
 
 }

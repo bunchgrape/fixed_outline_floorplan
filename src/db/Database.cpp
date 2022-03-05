@@ -16,6 +16,22 @@ Database::~Database() {
 
 //---------------------------------------------------------------------
 
+void Database::init(double ratio) {
+    // area
+    total_area = 0;
+    for (Macro* macro : macros) {
+        int area = macro->height() * macro->width();
+        total_area += area;
+    }
+
+    outline_height = int(sqrt(total_area * (1 + ratio)));
+    outline_width = int(sqrt(total_area * (1 + ratio)));
+
+    log() << "outline: " << outline_height << " x " << outline_width << endl;
+} //END MODULE
+
+//---------------------------------------------------------------------
+
 Cell* Database::addCell(const string& name) {
     Cell* cell = getCell(name);
     if (cell) {

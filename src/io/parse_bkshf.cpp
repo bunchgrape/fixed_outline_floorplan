@@ -360,10 +360,7 @@ bool Database::read(const std::string& blockFile, const std::string& netFile, co
         }
         net->init_bx();
     }
-    // for (Net* net : this->nets){
-    //     log() << net->max_x_ << ' ' << net->max_y_ << ' ' << net->min_x_ << ' ' << net->min_y_ << endl;
-    // }
-    // exit(1);
+
     return true;
 } //END MODULE
 

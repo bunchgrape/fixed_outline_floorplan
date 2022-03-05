@@ -1,6 +1,6 @@
 #include "global.h"
 #include "db/Database.h"
-#include "fp/floorplan.h"
+#include "fp/floorplanner.h"
 
 void signalHandler(int signum) {
     std::cout << "Signal (" << signum << ") received. Exiting...\n";
@@ -30,12 +30,13 @@ void partition(char* argv[]){
     database.designName = design;
 
     database.read(blockFile, netFile, plFile);
+    database.init(ratio);
 
-    db::Floorplan fp(&database);
+    // fp::Floorplan fp(&database);
 
-    fp.Pack();
-
-    // fp.print();
+    fp::Floorplanner fp(&database, 0.5, "fast", true);
+    fp.fp_path = fp_path;
+    fp.Run();
 
     fp.write(fp_path);
     

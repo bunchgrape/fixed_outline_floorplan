@@ -32,6 +32,10 @@ public:
     vector<Macro*> macros;
     vector<Net*> nets;
 
+    void init(double ratio);
+    int total_area;
+    int outline_height;
+    int outline_width;
 
 // buffer
 private:

@@ -1,5 +1,17 @@
 #include "global.h"
 
+namespace fp {
+
+class Node {
+public:
+    Node(int parent_id, int left_child_id, int right_child_id);
+    int id;
+    int parent_id_;
+    int left_child_id_;
+    int right_child_id_;
+    bool is_visited_;
+};
+
 class BStarTree {
 public:
     BStarTree(int num_macros);
@@ -18,15 +30,9 @@ public:
     void DeleteAndInsert(int deleted_node_id, int target_node_id,
                         std::pair<int, int> inserted_positions);
 
+    std::vector<Node> nodes_;
+
 private:
-    class Node {
-    public:
-        Node(int parent_id, int left_child_id, int right_child_id);
-        int parent_id_;
-        int left_child_id_;
-        int right_child_id_;
-        bool is_visited_;
-    };
 
     const Node& node(int node_id) const;
     Node& node(int node_id);
@@ -35,6 +41,6 @@ private:
                 std::pair<int, int> inserted_positions);
 
     int root_id_;
-    std::vector<Node> nodes_;
 };
 
+}

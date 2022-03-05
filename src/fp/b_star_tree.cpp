@@ -1,6 +1,6 @@
 #include "b_star_tree.h"
 
-using namespace std;
+using namespace fp;
 
 //---------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ void BStarTree::DeleteAndInsert(int deleted_node_id, int target_node_id,
 //---------------------------------------------------------------------
 
 // Private
-BStarTree::Node::Node(int parent_id, int left_child_id, int right_child_id)
+Node::Node(int parent_id, int left_child_id, int right_child_id)
     :   parent_id_(parent_id),
         left_child_id_(left_child_id),
         right_child_id_(right_child_id),
@@ -114,11 +114,11 @@ BStarTree::Node::Node(int parent_id, int left_child_id, int right_child_id)
 
 //---------------------------------------------------------------------
 
-BStarTree::Node& BStarTree::node(int node_id) { return nodes_.at(node_id); } //END MODULE
+Node& BStarTree::node(int node_id) { return nodes_.at(node_id); } //END MODULE
 
 //---------------------------------------------------------------------
 
-const BStarTree::Node& BStarTree::node(int node_id) const {
+const Node& BStarTree::node(int node_id) const {
     return nodes_.at(node_id);
 } //END MODULE
 
@@ -132,25 +132,28 @@ void BStarTree::Delete(int deleted_node_id) {
         child_id = deleted_node.left_child_id_;
         int current_node_id = child_id;
         while (left_child_id(current_node_id) != -1 &&
-            right_child_id(current_node_id) != -1) {
-        current_node_id = left_child_id(current_node_id);
+            right_child_id(current_node_id) != -1) 
+        {
+            current_node_id = left_child_id(current_node_id);
         }
         if (right_child_id(current_node_id) != -1) {
-        Node& current_node = node(current_node_id);
-        current_node.left_child_id_ = current_node.right_child_id_;
-        current_node.right_child_id_ = -1;
+            Node& current_node = node(current_node_id);
+            current_node.left_child_id_ = current_node.right_child_id_;
+            current_node.right_child_id_ = -1;
         }
         while (current_node_id != deleted_node_id) {
-        Node& current_node = node(current_node_id);
-        Node& current_parent = node(current_node.parent_id_);
-        Node& current_parent_right_child = node(current_parent.right_child_id_);
-        current_node.right_child_id_ = current_parent.right_child_id_;
-        current_parent_right_child.parent_id_ = current_node_id;
-        current_node_id = current_node.parent_id_;
+            Node& current_node = node(current_node_id);
+            Node& current_parent = node(current_node.parent_id_);
+            Node& current_parent_right_child = node(current_parent.right_child_id_);
+            current_node.right_child_id_ = current_parent.right_child_id_;
+            current_parent_right_child.parent_id_ = current_node_id;
+            current_node_id = current_node.parent_id_;
         }
-    } else if (deleted_node.left_child_id_ != -1) {
+    } 
+    else if (deleted_node.left_child_id_ != -1) {
         child_id = deleted_node.left_child_id_;
-    } else if (deleted_node.right_child_id_ != -1) {
+    } 
+    else if (deleted_node.right_child_id_ != -1) {
         child_id = deleted_node.right_child_id_;
     }
 
@@ -160,12 +163,14 @@ void BStarTree::Delete(int deleted_node_id) {
 
     if (deleted_node.parent_id_ == -1) {
         root_id_ = child_id;
-    } else {
+    } 
+    else {
         Node& parent = node(deleted_node.parent_id_);
         if (parent.left_child_id_ == deleted_node_id) {
-        parent.left_child_id_ = child_id;
-        } else {
-        parent.right_child_id_ = child_id;
+            parent.left_child_id_ = child_id;
+        } 
+        else {
+            parent.right_child_id_ = child_id;
         }
     }
 
@@ -183,22 +188,25 @@ void BStarTree::Insert(int inserted_node_id, int target_node_id,
     inserted_node.parent_id_ = target_node_id;
     if (inserted_positions.first % 2 == 0) {
         if (inserted_positions.second % 2 == 0) {
-        inserted_node.left_child_id_ = target_node.left_child_id_;
-        } else {
-        inserted_node.right_child_id_ = target_node.left_child_id_;
+            inserted_node.left_child_id_ = target_node.left_child_id_;
+        } 
+        else {
+            inserted_node.right_child_id_ = target_node.left_child_id_;
         }
         if (target_node.left_child_id_ != -1) {
-        node(target_node.left_child_id_).parent_id_ = inserted_node_id;
+            node(target_node.left_child_id_).parent_id_ = inserted_node_id;
         }
         target_node.left_child_id_ = inserted_node_id;
-    } else {
+    } 
+    else {
         if (inserted_positions.second % 2 == 0) {
-        inserted_node.left_child_id_ = target_node.right_child_id_;
-        } else {
-        inserted_node.right_child_id_ = target_node.right_child_id_;
+            inserted_node.left_child_id_ = target_node.right_child_id_;
+        }
+        else {
+            inserted_node.right_child_id_ = target_node.right_child_id_;
         }
         if (target_node.right_child_id_ != -1) {
-        node(target_node.right_child_id_).parent_id_ = inserted_node_id;
+            node(target_node.right_child_id_).parent_id_ = inserted_node_id;
         }
         target_node.right_child_id_ = inserted_node_id;
     }

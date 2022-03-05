@@ -1,8 +1,8 @@
 #include "contour.h"
 
-using namespace db;
+using namespace fp;
 
-Contour::Contour() : max_y_(0.0), coordinates_(1, Point(0.0, 0.0)) {}
+Contour::Contour() : max_y_(0.0), coordinates_(1, db::Point(0.0, 0.0)) {}
 
 void Contour::Print(ostream& os, int indent_level) const {
     const int indent_size = 2;
@@ -11,7 +11,7 @@ void Contour::Print(ostream& os, int indent_level) const {
     os << string(indent_level * indent_size, ' ') << "max_y_: " << max_y_ << endl;
     os << string(indent_level * indent_size, ' ') << "coordinates_:" << endl;
     ++indent_level;
-    for (const Point& point : coordinates_) {
+    for (const db::Point& point : coordinates_) {
         point.Print(os, indent_level);
     }
 }
@@ -20,7 +20,7 @@ double Contour::max_x() const { return coordinates_.back().x(); }
 
 double Contour::max_y() const { return max_y_; }
 
-pair<Point, Point> Contour::Update(double macro_x, double macro_width,
+pair<db::Point, db::Point> Contour::Update(double macro_x, double macro_width,
                                    double macro_height) {
     const double lower_left_x = macro_x;
     const double lower_left_y = FindMaxYBetween(macro_x, macro_x + macro_width);
@@ -30,15 +30,15 @@ pair<Point, Point> Contour::Update(double macro_x, double macro_width,
         max_y_ = upper_right_y;
     }
 
-    list<Point>::iterator it = coordinates_.begin();
+    list<db::Point>::iterator it = coordinates_.begin();
     while (it != coordinates_.end() && it->x() < lower_left_x) {
         ++it;
     }
-    list<Point>::iterator it_begin = it;
+    list<db::Point>::iterator it_begin = it;
     while (it != coordinates_.end() && it->x() < upper_right_x) {
         ++it;
     }
-    list<Point>::iterator it_end = it;
+    list<db::Point>::iterator it_end = it;
 
     const bool is_touched =
         (it_end == coordinates_.end() || it_end->x() != upper_right_x) ? false
@@ -65,12 +65,12 @@ pair<Point, Point> Contour::Update(double macro_x, double macro_width,
         coordinates_.erase(it_begin, it_end);
     } else {
         coordinates_.erase(it_begin, it_end);
-        coordinates_.insert(it_end, Point(lower_left_x, upper_right_y));
+        coordinates_.insert(it_end, db::Point(lower_left_x, upper_right_y));
     }
     if (is_touched && is_next_y_equal) {
         coordinates_.erase(it_end);
     } else {
-        coordinates_.insert(it_end, Point(upper_right_x, last_y));
+        coordinates_.insert(it_end, db::Point(upper_right_x, last_y));
         if (is_last_y_next_y_equal) {
         coordinates_.erase(it_end);
         }
@@ -86,14 +86,14 @@ pair<Point, Point> Contour::Update(double macro_x, double macro_width,
     /*   } */
     /* } */
 
-    return make_pair(Point(lower_left_x, lower_left_y),
-                    Point(upper_right_x, upper_right_y));
+    return make_pair(db::Point(lower_left_x, lower_left_y),
+                    db::Point(upper_right_x, upper_right_y));
 }
 
 // Private
 
 double Contour::FindMaxYBetween(double x_begin, double x_end) const {
-    list<Point>::const_iterator it = coordinates_.begin();
+    list<db::Point>::const_iterator it = coordinates_.begin();
 
     while (it != coordinates_.end() && it->x() <= x_begin) {
         ++it;
