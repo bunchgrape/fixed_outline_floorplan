@@ -28,8 +28,7 @@ void Net::init_bx()
 
 int Net::ComputeWirelength(
     vector<pair<Point, Point>> macro_bounding_box_by_id) const {
-    // log() << "WL begin\n";
-    // log() << max_x_ << ' ' << max_y_ << ' ' << min_x_ << ' ' << min_y_ << endl;
+        
     int min_x = min_x_;
     int min_y = min_y_;
     int max_x = max_x_;
@@ -52,5 +51,6 @@ int Net::ComputeWirelength(
             max_y = y;
         }
     }
+    
     return Point::HPWL(Point(min_x, min_y), Point(max_x, max_y));
 }

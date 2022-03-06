@@ -13,6 +13,8 @@ void signalHandler(int signum) {
 void partition(char* argv[]){
     log() << "FloorPlanning" << std::endl;
 
+    
+
     // input
     string blockFile    = string(argv[1]);
     string netFile      = string(argv[2]);
@@ -24,7 +26,6 @@ void partition(char* argv[]){
     std::string prefix = blockFile.substr(0,blockFile.find_last_of('.'));
     std::string design = prefix.substr(prefix.find_last_of('/'));
     
-
     db::Database database;
 
     database.designName = design;
@@ -32,10 +33,12 @@ void partition(char* argv[]){
     database.read(blockFile, netFile, plFile);
     database.init(ratio);
 
+    // database.recall_design();
+    // exit(1);
+
     // fp::Floorplan fp(&database);
 
-    fp::Floorplanner fp(&database, 0.5, "fast", true);
-    fp.fp_path = fp_path;
+    fp::Floorplanner fp(&database, 0.5, "classical", true, fp_path);
     fp.Run();
 
     fp.write(fp_path);
@@ -54,7 +57,13 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
     srand (time(NULL));
+    // utils::timer runtime;
+    // for (int i = 0; i < 885 ; i++){
 
+    // }
+    // double pack_time = runtime.elapsed();
+    // cout << "========== Pack time: " << pack_time << " s ==========\n\n\n";
+    // exit(1);
     std::cout << std::boolalpha;  // set std::boolalpha to std::cout
     
     log() << "-----------start-------------" << std::endl;

@@ -103,3 +103,27 @@ Net* Database::getNet(const string& name) {
 } //END MODULE
 
 //---------------------------------------------------------------------
+/*
+Output the design format of previous version
+*/
+
+void Database::recall_design(){
+    ofstream outfile;
+    outfile.open("/data/ssd/bqfu/hw/floorplanner/testcases/n100.block", ios::out);
+
+    outfile << "Outline: " << outline_width << ' ' << outline_height << "\n";
+
+    outfile << "NumBlocks: " << nMacros << endl;
+    outfile << "NumTerminals: " << nMacros << endl;
+
+    for (Macro* macro : macros) {
+        outfile << macro->name() << ' ' << macro->width() << ' ' << macro->height() << endl;
+    }
+
+    for (Cell* cell : cells) {
+        outfile << cell->name() << " terminal " << cell->pos->x() << ' ' << cell->pos->y() << endl;
+    }
+
+} //END MODULE
+
+//---------------------------------------------------------------------

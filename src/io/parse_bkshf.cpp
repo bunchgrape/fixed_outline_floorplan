@@ -356,9 +356,13 @@ bool Database::read(const std::string& blockFile, const std::string& netFile, co
             else if (cellType == '1') {
                 Macro* macro = this->getMacro(bsData.cellName[cellID]);
                 net->macro_list.push_back(macro);
+                net->macro_list_by_id.push_back(macro->id);
             }
         }
+        this->nets_by_id.push_back(net->macro_list_by_id);
         net->init_bx();
+        this->net_terminals.push_back(db::pin(net->min_x_, net->min_y_,
+                                            net->max_x_, net->max_y_));
     }
 
     return true;

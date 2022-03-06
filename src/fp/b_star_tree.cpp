@@ -4,16 +4,52 @@ using namespace fp;
 
 //---------------------------------------------------------------------
 
-BStarTree::BStarTree(int num_macros)
-    : root_id_(0), nodes_(num_macros, Node(-1, -1, -1)) {
-    const int num_nodes = nodes_.size();
+BStarTree::BStarTree(db::Database* database_)
+    :   database(database_),
+        root_id_(0), 
+        nodes_(database_->nMacros, Node(-1, -1, -1)) 
+{
+    int num_macros = database_->nMacros;
+    vector<int> inserted(num_macros, 0);
+    root_id_ = rand() % num_macros;
+    inserted[root_id_] = 1;
+    
+    int row_node = root_id_;
+    int col_node = root_id_;
+    int width = database->macros[root_id_]->width();
+    int inserted_cnt = 1;
 
-    for (int i = 0; i < num_nodes - 1; ++i) {
-        nodes_[i].left_child_id_ = i + 1;
+
+    while (inserted_cnt != num_macros) {
+        int node;
+        do {
+            node = rand() % num_macros;
+        } while (inserted[node]);
+        if (width > database->outline_width / 2) {
+            nodes_[node].parent_id_= row_node;
+            nodes_[row_node].right_child_id_ = node;
+            row_node = node;
+            col_node = node;
+            width = database->macros[node]->width();
+        }
+        else {
+            nodes_[node].parent_id_ = col_node;
+            nodes_[col_node].left_child_id_ = node;
+            col_node = node;
+            width += database->macros[node]->width();
+        }
+
+        inserted[node] = 1;
+        inserted_cnt++;
     }
-    for (int i = 1; i < num_nodes; ++i) {
-        nodes_[i].parent_id_ = i - 1;
-    }
+
+    // int num_macros = database_->nMacros;
+    // for (int i = 0; i < num_macros - 1; ++i) {
+    //     nodes_[i].left_child_id_ = i + 1;
+    // }
+    // for (int i = 1; i < num_macros; ++i) {
+    //     nodes_[i].parent_id_ = i - 1;
+    // }
 
     /* for (int i = 0; i < num_nodes / 2 + 1; ++i) { */
     /*   const int right_child_id = (i + 1) * 2; */

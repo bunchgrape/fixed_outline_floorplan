@@ -6,6 +6,11 @@ namespace fp {
 class Contour {
 public:
     Contour();
+    Contour(const int width) {box.resize(width * 2);}
+
+    vector<int> box;
+    int box_x_max = 0;
+    int box_y_max = 0;
 
     void Print(std::ostream& os = std::cout, int indent_level = 0) const;
 
@@ -19,6 +24,7 @@ private:
 
     double max_y_;
     std::list<db::Point> coordinates_;
+
 };
 
 }

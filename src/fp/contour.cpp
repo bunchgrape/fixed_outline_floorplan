@@ -76,16 +76,6 @@ pair<db::Point, db::Point> Contour::Update(double macro_x, double macro_width,
         }
     }
 
-    /* double previous_y = -1; */
-    /* for (it = coordinates_.begin(); it != coordinates_.end(); ++it) { */
-    /*   if (it->y() == previous_y) { */
-    /*     it = coordinates_.erase(it); */
-    /*     --it; */
-    /*   } else { */
-    /*     previous_y = it->y(); */
-    /*   } */
-    /* } */
-
     return make_pair(db::Point(lower_left_x, lower_left_y),
                     db::Point(upper_right_x, upper_right_y));
 }

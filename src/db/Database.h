@@ -6,6 +6,7 @@ class Cell;
 class Macro;
 class Net;
 class Point;
+struct pin;
 }  // namespace db
 
 #include "Cell.h"
@@ -32,10 +33,16 @@ public:
     vector<Macro*> macros;
     vector<Net*> nets;
 
+    vector<vector<int>> nets_by_id;
+    // vector<pair<db::Point, db::Point>> net_terminals;
+    vector<pin> net_terminals;
+
     void init(double ratio);
     int total_area;
     int outline_height;
     int outline_width;
+
+    void recall_design();
 
 // buffer
 private:

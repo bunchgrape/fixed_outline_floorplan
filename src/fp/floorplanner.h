@@ -8,11 +8,12 @@ namespace fp {
 class Floorplanner {
 public:
     Floorplanner(db::Database* database_, double alpha,
-                const std::string& sa_mode, bool is_verbose);
+                const std::string& sa_mode, bool is_verbose,
+                const string fp_path = " ");
 
     db::Database* database;
 
-    string fp_path = " ";
+    string fp_path_;
 
     double alpha() const;
     const Floorplan& best_floorplan() const;

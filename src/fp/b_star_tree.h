@@ -1,4 +1,5 @@
 #include "global.h"
+#include "db/Database.h"
 
 namespace fp {
 
@@ -14,7 +15,8 @@ public:
 
 class BStarTree {
 public:
-    BStarTree(int num_macros);
+    BStarTree(db::Database* database_);
+    db::Database* database;
 
     void Print(std::ostream& os = std::cout, int indent_level = 0) const;
 
