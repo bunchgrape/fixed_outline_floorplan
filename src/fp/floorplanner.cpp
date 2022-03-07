@@ -9,6 +9,7 @@ Floorplanner::Floorplanner(db::Database* database_, double alpha,
     :   database(database_),
         fp_path_(fp_path),
         alpha_(alpha),
+        lambda_(100),
         sa_mode_(sa_mode),
         is_verbose_(is_verbose),
         min_area_(numeric_limits<double>::max()),
@@ -25,32 +26,21 @@ Floorplanner::Floorplanner(db::Database* database_, double alpha,
     const int num_perturbations = num_macros;
     Floorplan floorplan(best_floorplan_);
 
-
     floorplan.PackInt();
-    // log() << floorplan.width() <<' '<<floorplan.height()<<endl;
-    // floorplan.Pack();
-    // log() << floorplan.width() <<' '<<floorplan.height()<<endl;
-    // exit(1);
 
     const double area = floorplan.area();
     const double wirelength = floorplan.wirelength();
     average_area_ = area;
     average_wirelength_ = wirelength;
 
-
     double adaptive_alpha = alpha_ / 2;
     double adaptive_beta = (1.0 - alpha_) / 2;
     double cost = ComputeCostNaive(floorplan);
     average_uphill_cost_ = cost;
 
-    log() << floorplan.width() <<' '<<floorplan.height()<<endl;
-    log() << average_area_ << ' ' << average_wirelength_ << endl;
-    log() << average_uphill_cost_ << endl;
-    // exit(1);
 } //END MODULE
 
 //---------------------------------------------------------------------
-
 
 void Floorplanner::init(){
     const int num_macros = database->nMacros;
@@ -62,32 +52,11 @@ void Floorplanner::init(){
     // init WL and Area
     double total_area = 0.0;
     double total_wirelength = 0.0;
-    for (int i = 0; i < num_perturbations; i++) {
-        floorplan.Perturb();
-        floorplan.PackInt();
-        
-        int area = floorplan.area();
-        total_area += area;
-        int wirelength = floorplan.wirelength();
-        total_wirelength += wirelength;
-
-        if (area < min_area_) {
-            min_area_ = area;
-        }
-        if (area > max_area_) {
-            max_area_ = area;
-        }
-        if (wirelength < min_wirelength_) {
-            min_wirelength_ = wirelength;
-        }
-        if (wirelength > max_wirelength_) {
-            max_wirelength_ = wirelength;
-        }
-    }
 
     // init cost
-    double adaptive_alpha = alpha_ / 4.0;
-    double adaptive_beta = (1.0 - alpha_) / 4.0;
+    beta_ = 1 - alpha_;
+    double adaptive_alpha = alpha_ / 2;
+    double adaptive_beta = beta_ / 2;
     double total_uphill_cost = 0.0;
     int num_uphills = 0;
     double last_cost =
@@ -125,10 +94,6 @@ void Floorplanner::init(){
     average_wirelength_ = total_wirelength / num_perturbations;
     average_uphill_cost_ = total_uphill_cost / num_uphills;
     
-    // log() << floorplan.width() <<' '<<floorplan.height()<<endl;
-    // log() << average_area_ << ' ' << average_wirelength_ << endl;
-    // log() << num_uphills << ' ' << average_uphill_cost_ << endl;
-    // exit(1);
 } //END MODULE
 
 //---------------------------------------------------------------------
@@ -155,24 +120,12 @@ double Floorplanner::ComputeCostNaive(const Floorplan& floorplan) const {
         height_penalty = (height / outline_height);
     }
 
-    // log() << "-------------------\n";
-    // log() << width <<" | "<<outline_width<<endl;
-    // log() << height<<" | "<<outline_height<<endl;
-
-    // log()<<floorplan.area() <<" | "<<average_area_<<endl;
-
-    // log()<<floorplan.wirelength() <<" | "<<average_wirelength_<<endl;
-
-
-
     // TODO:
     const double normalized_area = floorplan.area() / average_area_;
     const double normalized_wirelength = floorplan.wirelength() / average_wirelength_;
 
     const double cost  = normalized_area + normalized_wirelength +
                         (outline_penalty + width_penalty + height_penalty);
-
-
 
     return cost;
 } //END MODULE
@@ -187,7 +140,6 @@ double Floorplanner::ComputeCost(const Floorplan& floorplan, double alpha,
     const double width = floorplan.width();
     const double height = floorplan.height();
     
-    
     //outline cost
     double width_penalty = 0;
     double height_penalty = 0;
@@ -198,59 +150,20 @@ double Floorplanner::ComputeCost(const Floorplan& floorplan, double alpha,
         height_penalty = (height / outline_height);
     }
 
+    double box_penalty = width_penalty + height_penalty;
+
     // ratio cost
     const double ratio = height / width; 
     const double outline_ratio = outline_height / outline_width; 
     double outline_penalty = (ratio - outline_ratio) * (ratio - outline_ratio); 
 
-    // // cost
-    // const double penalty_weight = 1;
-    // double penalty = 0.0;
-    // if (width > outline_width || height > outline_height) {
-    //     if (width > outline_width && height > outline_height) {
-    //         penalty += (width * height - outline_width * outline_height);
-    //     } 
-    //     else if (width > outline_width) {
-    //         penalty += ((width - outline_width) * height);
-    //     } 
-    //     else if (height > outline_height) {
-    //         penalty += (width * (height - outline_height));
-    //     }
-    //     penalty += ((width - outline_width) * (width - outline_width) +
-    //                 (height - outline_height) * (height - outline_height));
-    //     penalty /= (max_area_ - min_area_);
-    // }
-
-
 
     // TODO:
     const double normalized_area = floorplan.area() / average_area_;
     const double normalized_wirelength = floorplan.wirelength() / average_wirelength_;
-    // const double normalized_area1 = floorplan.area() / (max_area_ - min_area_);
-    // const double normalized_wirelength1 =
-    //             floorplan.wirelength() / (max_wirelength_ - min_wirelength_);
 
     const double cost = alpha * normalized_area + beta * normalized_wirelength +
-                        (1.0 - alpha - beta) * 100
-                        * (outline_penalty + width_penalty + height_penalty);
-
-    // const double cost = alpha * (normalized_area + outline_penalty)
-    //                     + beta * normalized_wirelength;
-
-    // log() << "-------------------\n";
-    // // log() << width <<" | "<<outline_width<<endl;
-    // // log() << height<<" | "<<outline_height<<endl;
-
-    // log() << normalized_area << " | " << normalized_wirelength << endl;
-    // log() << normalized_area1 << " | " << normalized_wirelength1 << endl;
-
-    // // log()<< floorplan.area() << " | " << average_area_ << endl;
-
-    // // log() << floorplan.wirelength() << " | " << average_wirelength_ << endl;
-    // log() << "penalty " << outline_penalty << " | " << penalty << endl;
-    // log() << "cost " << cost << endl;
-
-    // exit(1);
+                        (1.0 - alpha - beta) * outline_penalty;
 
     return cost;
 }  //END MODULE

@@ -15,7 +15,6 @@ public:
 
     string fp_path_;
 
-    double alpha() const;
     const Floorplan& best_floorplan() const;
 
     void write(const string& output_path);
@@ -29,8 +28,10 @@ private:
     double ComputeCost(const Floorplan& floorplan, double alpha,
                         double beta) const;
 
-    
     double alpha_;
+    double beta_;
+    double lambda_;
+
     std::string sa_mode_;
     bool is_verbose_;
     double min_area_;

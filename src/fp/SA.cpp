@@ -1,5 +1,4 @@
 #include "floorplanner.h"
-
 using namespace fp;
 
 
@@ -142,13 +141,11 @@ void Floorplanner::FastSA() {
 
     const double stop_T = init_T / 1.0e15;
     const double stop_accept_rate = 0.01;
-
-    const double alpha = alpha_;
-    const double beta = (1 - alpha);
-    const double adaptive_alpha_base = alpha/4;
-    const double adaptive_beta_base = beta/4;
-    const int c = 100;
-    const int k = 7;
+    
+    double adaptive_alpha_base = alpha_ / 2;
+    double adaptive_beta_base = beta_ / 2;
+    const int c = 10;
+    const int k = 21;
 
     Floorplan floorplan(best_floorplan_);
     floorplan.PackInt();
@@ -171,7 +168,6 @@ void Floorplanner::FastSA() {
         int num_accepted_floorplans = 0;
         int num_feasible_floorplans = 0;
 
-
         // adapt new values
         last_cost =
                 ComputeCost(floorplan, adaptive_alpha, adaptive_beta);
@@ -192,17 +188,9 @@ void Floorplanner::FastSA() {
             const double delta_cost = cost - last_cost;
             
             p = exp(-1 * delta_cost / T);
-            // log() << delta_cost << " | " << T << endl;
-            // log() << p << endl;
             if ((delta_cost < 0) ||
                     (rand() / static_cast<double>(RAND_MAX) < p)) 
             {   
-                // if(delta_cost==0){
-                //     floorplan.write(fp_path_);
-                //     new_floorplan.write("/data/ssd/bqfu/hw/fp/output/n100.floorplan");
-                // }
-                // log() << delta_cost << ' ' << cost << " | " << last_cost << endl;
-                
                 total_delta_cost += delta_cost;
                 num_accepted_floorplans++;
                 floorplan = new_floorplan;
@@ -214,7 +202,8 @@ void Floorplanner::FastSA() {
                     new_floorplan.height() <= outline_height) 
                 {
                     num_feasible_floorplans++;
-                    if (cost < best_cost) {
+                    if (cost < best_cost ||
+                        new_floorplan.wirelength() < best_floorplan_.wirelength()) {
                         best_floorplan_ = new_floorplan;
                         best_cost = cost;
                     }
@@ -235,63 +224,60 @@ void Floorplanner::FastSA() {
             log() << "    T:    " << T << endl;
             log() << "    stop T:    " << stop_T << endl;
             log() << "    total_delta_cost: " << total_delta_cost << endl;
+            log() << "    cost coef: " << abs(total_delta_cost / num_perturbations) << endl;
             log() << "    num_accepted_floorplans:  " << num_accepted_floorplans
                 << endl;
             log() << "    num_feasible_floorplans:  " << num_feasible_floorplans
                 << endl;
+            log() << "    lambda:    " << lambda_ << endl;
             log() << "    adaptive_alpha: " << adaptive_alpha
                 << "\tadaptive_beta: " << adaptive_beta << endl;
             log() << "    Best area: " << best_floorplan_.area()
                 << "\tBest wirelength: " << best_floorplan_.wirelength() << endl;
+            log() << "invalid Best area: " << best_floorplan_invalid_.area() << endl;
+            log() << "invalid Best wirelength: " << best_floorplan_invalid_.wirelength() << endl;
         }
 
         // if (num_accepted_floorplans / static_cast<double>(num_perturbations) <
         //     stop_accept_rate) 
         //     break;
 
-        // double solution_change = (num_feasible_floorplans / 
-        //             static_cast<double>(num_accepted_floorplans + 1e-5));
-
-        // adaptive_alpha = adaptive_alpha * (1 - solution_change);
-        // adaptive_beta = 1 - adaptive_alpha;
-
-        // if (true){
-        //     const double average_delta_cost = abs(total_delta_cost / num_perturbations);
-        //     if (num_iteration >= 1 && num_iteration < k) {
-        //         T =
-        //             init_T * average_delta_cost / (num_iteration + 1) / c;
-        //     } 
-        //     else {
-        //         T =
-        //             init_T * average_delta_cost / (num_iteration + 1);
-        //     }
+        // adaptive_alpha =
+        //     adaptive_alpha_base +
+        //     (alpha_ - adaptive_alpha_base) *
+        //         (num_feasible_floorplans / static_cast<double>(num_perturbations));
+        // adaptive_beta =
+        //     adaptive_beta_base +
+        //     (beta_ - adaptive_beta_base) *
+        //         (num_feasible_floorplans / static_cast<double>(num_perturbations));
+        
+        double sol_coef = (num_feasible_floorplans 
+                    / static_cast<double>(num_perturbations) );
+        // if (sol_coef == 0 && num_iteration < k){
+        //     lambda_ *= 2;
         // }
-        // else
-        //     T*=r;
-
-        adaptive_alpha =
-            adaptive_alpha_base +
-            (alpha - adaptive_alpha_base) *
-                (num_feasible_floorplans / static_cast<double>(num_perturbations));
-        adaptive_beta =
-            adaptive_beta_base +
-            (beta - adaptive_beta_base) *
-                (num_feasible_floorplans / static_cast<double>(num_perturbations));
+        // else {
+        //     lambda_ /= 2;
+        // }
 
         const double average_delta_cost = abs(total_delta_cost / num_perturbations);
-        if (true)
-        {
-                if (num_iteration >= 1 && num_iteration < k) {
-                T =
-                    init_T * average_delta_cost / (num_iteration + 1) / c;
-            } 
-            else {
-                T =
-                    init_T * average_delta_cost / (num_iteration + 1);
-            }
+
+        if (num_iteration >= 1 && num_iteration < k) {
+            T = init_T * average_delta_cost / (num_iteration + 1) / c;
+        } 
+        else {
+            lambda_ = 1;
+            T = init_T * average_delta_cost / (num_iteration + 1);
+
+            // adaptive_alpha =
+            //     adaptive_alpha_base +
+            //     (alpha_ - adaptive_alpha_base) *
+            //         (num_feasible_floorplans / static_cast<double>(num_perturbations));
+            // adaptive_beta =
+            //     adaptive_beta_base +
+            //     (beta_ - adaptive_beta_base) *
+            //         (num_feasible_floorplans / static_cast<double>(num_perturbations));
         }
-        else
-            T*=r;
     } //END WHILE
 
     log() << "    T:    " << T << endl;
