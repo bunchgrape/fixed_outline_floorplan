@@ -24,7 +24,7 @@ public:
 
     void Perturb();
     void Pack();
-    void PackInt();
+    void PackInt(bool print = false);
     void print();
 
     void write(const string& output_path);
@@ -36,8 +36,9 @@ private:
     double wirelength_;
     BStarTree b_star_tree_;
     vector<bool> is_macro_rotated_by_id_;
+    vector<bool> is_macro_rotatable_by_id_;
     vector<pair<db::Point, db::Point>> macro_bounding_box_by_id_;
-    void traverseTree(int cur_node, bool left);
+    void traverseTree(int cur_node, bool left, bool print = false) ;
 };
 
 }

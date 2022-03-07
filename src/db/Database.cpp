@@ -109,7 +109,7 @@ Output the design format of previous version
 
 void Database::recall_design(){
     ofstream outfile;
-    outfile.open("/data/ssd/bqfu/hw/floorplanner/testcases/n100.block", ios::out);
+    outfile.open("/data/ssd/bqfu/hw/floorplanner/fixed-outline_floorplanning/testcases/"+designName+".blocks", ios::out);
 
     outfile << "Outline: " << outline_width << ' ' << outline_height << "\n";
 

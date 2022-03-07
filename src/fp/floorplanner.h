@@ -19,12 +19,13 @@ public:
     const Floorplan& best_floorplan() const;
 
     void write(const string& output_path);
-
+    void init();
     void Run();
 
 private:
     void SA();
     void FastSA();
+    double ComputeCostNaive(const Floorplan& floorplan) const;
     double ComputeCost(const Floorplan& floorplan, double alpha,
                         double beta) const;
 
@@ -40,6 +41,7 @@ private:
     double average_wirelength_;
     double average_uphill_cost_;
     Floorplan best_floorplan_;
+    Floorplan best_floorplan_invalid_;
 };
 
 }

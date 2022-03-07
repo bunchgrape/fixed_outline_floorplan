@@ -11,11 +11,15 @@ Floorplan::Floorplan(db::Database* database_):
       b_star_tree_(database_),
       macro_id_by_node_id_(database_->nMacros, -1),
       is_macro_rotated_by_id_(database_->nMacros, false),
+      is_macro_rotatable_by_id_(database_->nMacros, false),
       macro_bounding_box_by_id_(database_->nMacros,
                                 make_pair(db::Point(0, 0), db::Point(0, 0)))
     {
         for (int i = 0; i < macro_id_by_node_id_.size(); i++) {
             macro_id_by_node_id_[i] = i;
+            is_macro_rotatable_by_id_[i] =
+                    (database_->macros[i]->width() 
+                != database_->macros[i]->height());
         }
         macro_pins.resize(macro_id_by_node_id_.size());
         database = database_;
@@ -83,7 +87,14 @@ void Floorplan::Perturb() {
     const int op = rand() % 3;
     switch (op) {
         case 0: {
-            const int macro_id = rand() % num_macros; // TODO: all rotatable
+            // TODO: all rotatable?
+            const int macro_id = [&]() {
+            int macro_id = rand() % num_macros;
+                while (!is_macro_rotatable_by_id_[macro_id]) {
+                    macro_id = rand() % num_macros;
+                }
+                return macro_id;
+            }();
             is_macro_rotated_by_id_.at(macro_id) =
                 !is_macro_rotated_by_id_.at(macro_id);
             break;
@@ -249,7 +260,7 @@ void Floorplan::Pack() {
 
 //---------------------------------------------------------------------
 // FIXME:
-void Floorplan::traverseTree(int current_node_id, bool left) {
+void Floorplan::traverseTree(int current_node_id, bool left, bool print) {
     
     Node &current_node = b_star_tree_.nodes_[current_node_id];
     const int current_macro_id = macro_id_by_node_id_[current_node_id];
@@ -263,17 +274,24 @@ void Floorplan::traverseTree(int current_node_id, bool left) {
     const pair<db::Point, db::Point> parent_macro_bounding_box =
             macro_bounding_box_by_id_[parent_macro_id];
 
+    const bool is_current_macro_rotated = is_macro_rotated_by_id_[current_macro_id];
+    int current_macro_width = current_macro->width();
+    int current_macro_height = current_macro->height();
+    if (is_current_macro_rotated) {
+        swap(current_macro_width, current_macro_height);
+    }
+
     // left or right child of parent
     int lower_left_x;
     int lower_left_y;
     if (left)
-        lower_left_x = parent_macro_bounding_box.first.x() + parent_macro->width();
+        lower_left_x = parent_macro_bounding_box.second.x();
     else 
         lower_left_x = parent_macro_bounding_box.first.x();
 
 
     int x_start = lower_left_x;
-    int x_end = x_start + current_macro->width();
+    int x_end = x_start + current_macro_width;
     if (x_end > contour.box.size())
         contour.box.resize(x_end);
     int y_max = 0;
@@ -283,17 +301,28 @@ void Floorplan::traverseTree(int current_node_id, bool left) {
 
     lower_left_y = y_max;
 
-    int upper_right_x = lower_left_x + current_macro->width();
-    int upper_right_y = lower_left_y + current_macro->height();
+    int upper_right_x = lower_left_x + current_macro_width;
+    int upper_right_y = lower_left_y + current_macro_height;
 
     if (upper_right_x > contour.box_x_max)
         contour.box_x_max = upper_right_x;
     if (upper_right_y > contour.box_y_max)
         contour.box_y_max = upper_right_y;
 
-    y_max += current_macro->height();
+    y_max += current_macro_height;
     for (int i = x_start; i < x_end; i++)
         contour.box[i] = y_max;
+
+    if (print){
+        log() << lower_left_x << endl;
+        log() << lower_left_y << endl;
+        log() << upper_right_x << endl;
+        log() << upper_right_y << endl;
+        log() << current_node.left_child_id_ << endl;
+        log() << current_node.right_child_id_  << endl;
+        
+        // b_star_tree_.Print();
+    }
 
     macro_bounding_box_by_id_[current_macro_id] =
             make_pair(db::Point(lower_left_x, lower_left_y),
@@ -303,15 +332,15 @@ void Floorplan::traverseTree(int current_node_id, bool left) {
                 (int)(lower_left_y + upper_right_y) / 2);
 
     if (current_node.left_child_id_ != -1)
-        traverseTree(current_node.left_child_id_, true);
+        traverseTree(current_node.left_child_id_, true, print);
     if (current_node.right_child_id_ != -1)
-        traverseTree(current_node.right_child_id_, false);
+        traverseTree(current_node.right_child_id_, false, print);
     
 } //END MODULE
 
 //---------------------------------------------------------------------
 // FIXME:
-void Floorplan::PackInt() {
+void Floorplan::PackInt(bool print) {
     // find root node and macro
     const int root_id = b_star_tree_.root_id();
     Node &root_node = b_star_tree_.nodes_[root_id];
@@ -321,6 +350,10 @@ void Floorplan::PackInt() {
     // set box
     int root_macro_width = root_macro->width();
     int root_macro_height = root_macro->height();
+    const bool is_root_macro_rotated = is_macro_rotated_by_id_[root_macro_id];
+    if (is_root_macro_rotated) {
+        swap(root_macro_width, root_macro_height);
+    }
     macro_bounding_box_by_id_[root_macro_id] =
             make_pair(db::Point(0, 0),
                     db::Point(root_macro_width, root_macro_height));
@@ -343,7 +376,6 @@ void Floorplan::PackInt() {
     height_ = contour.box_y_max;
 
     wirelength_ = 0.0;
-    // utils::timer runtime;
     for (int i = 0; i < database->nNets; i++) {
         const vector<int> &net = database->nets_by_id[i];
         const db::pin &terminal_box = database->net_terminals[i];
@@ -375,24 +407,30 @@ void Floorplan::PackInt() {
         }
         wirelength_ += (max_x - min_x) + (max_y - min_y);
     }
-    // double pack_time = runtime.elapsed();
-    // log() << "========== Pack time: " << pack_time << " s ==========\n\n\n";
-    // exit(1);
-
-    // cout << "original\n";
-    // cout << "width: " << width_ << endl;
-    // cout << "height: " << height_ << endl;
-    // cout << "WL: " << wirelength_ << endl;
+    if (print){
+        for (const pair<db::Point, db::Point> &bbx : macro_bounding_box_by_id_){
+            log() << bbx.first.x() << endl;
+            log() << bbx.first.y() << endl;
+            log() << bbx.second.x() << endl;
+            log() << bbx.second.y() << endl;
+        }
+    }
 } //END MODULE
 
 //---------------------------------------------------------------------
 
 void Floorplan::write(const string& output_path) {
+    // log() << "---------------------\n";
+    // for (const pair<db::Point, db::Point> &bbx : macro_bounding_box_by_id_){
+    //     log() << bbx.first.x() << endl;
+    //     log() << bbx.first.y() << endl;
+    //     log() << bbx.second.x() << endl;
+    //     log() << bbx.second.y() << endl;
+    // }
     ofstream outfile;
     outfile.open(output_path, ios::out);
     outfile << "Wirelength " << wirelength_ << "\n";
     outfile <<"Blocks\n";
-
     for (int i = 0; i < b_star_tree_.num_nodes(); i++) {
         const int macro_id = i;
         const string macro_name = database->macros[macro_id]->name();

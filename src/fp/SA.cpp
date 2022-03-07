@@ -11,8 +11,6 @@ void Floorplanner::SA() {
     const double init_T =
             average_uphill_cost_ * database->nMacros / (-1 * log(P));
     const int N = database->nMacros * 20;
-    log() << database->nMacros<<endl;
-    log() << average_uphill_cost_<<endl;
     log() << "Init temperature:  " << init_T << endl;
     // exit(1);
 
@@ -21,31 +19,17 @@ void Floorplanner::SA() {
 
     const double alpha = alpha_;
     const double beta = (1 - alpha);
-    const double adaptive_alpha_base = alpha / 4.0;
-    const double adaptive_beta_base = beta / 4.0;
+    const double adaptive_alpha_base = alpha;
+    const double adaptive_beta_base = beta;
 
 
     Floorplan floorplan(best_floorplan_);
     floorplan.Pack();
-    // log()<<floorplan.width()<<' '<<floorplan.height()<<endl;
-    // int i =0;
-    // while(i<10000){
-    //     i++;
-    //     // floorplan.Perturb();
-    //     floorplan.PackInt();
-    // }
-    // // log()<<floorplan.width()<<' '<<floorplan.height()<<endl;
-    // exit(1);
-
-    // utils::timer runtime;
-    // floorplan.PackInt();
-    // double pack_time = runtime.elapsed();
-    // log() << "========== Pack time: " << pack_time << " s ==========\n\n\n";
-    // exit(1);
 
     double adaptive_alpha = adaptive_alpha_base;
     double adaptive_beta = adaptive_beta_base;
     double best_cost = average_uphill_cost_;
+    // double best_cost_invalid = best_cost;
     double last_cost = best_cost;
     double T = init_T;
     int num_iteration = 0;
@@ -74,7 +58,7 @@ void Floorplanner::SA() {
       
 
             const double cost =
-                ComputeCost(new_floorplan, adaptive_alpha, adaptive_beta);
+                ComputeCostNaive(new_floorplan);
             const double delta_cost = cost - last_cost;
             const double p = exp(-1 * delta_cost / T);
             // log() << delta_cost << endl;
@@ -98,6 +82,12 @@ void Floorplanner::SA() {
                         best_cost = cost;
                     }
                 }
+                else {
+                    if (cost < best_cost) {
+                        best_floorplan_invalid_ = new_floorplan;
+                        best_cost = cost;
+                    }
+                }
             } 
         } //END FOR
         double run_time = runtime.elapsed();
@@ -117,83 +107,103 @@ void Floorplanner::SA() {
                 << "\tBest wirelength: " << best_floorplan_.wirelength() << endl;
         }
 
-        // TODO:
-        // write(fp_path);
-        // best_floorplan_.print();
-        // exit(1);
-
-
-        // if (num_accepted_floorplans / static_cast<double>(N) <
-        //     stop_accept_rate) 
-        //     break;
-
-        // adaptive_alpha =
-        //     adaptive_alpha_base +
-        //     (alpha - adaptive_alpha_base) *
-        //         (num_feasible_floorplans / static_cast<double>(N));
-        // adaptive_beta =
-        //     adaptive_beta_base +
-        //     (beta - adaptive_beta_base) *
-        //         (num_feasible_floorplans / static_cast<double>(N));
         T *= r;
+    }
+
+    if (best_floorplan_.area() == 0) {
+        log() << "No feasible solution\n";
+        log() << fp_path_ << endl;
+        best_floorplan_invalid_.PackInt();
+        best_floorplan_invalid_.write(fp_path_);
+        best_floorplan_invalid_.Pack();
+        best_floorplan_invalid_.write("/data/ssd/bqfu/hw/fp/output/n100.floorplan");
+    }
+    else{
+        best_floorplan_.PackInt();
+        best_floorplan_.write(fp_path_);
+        best_floorplan_.Pack();
+        best_floorplan_.write("/data/ssd/bqfu/hw/fp/output/n100.floorplan");
     }
 } //END MODULE
 
 //---------------------------------------------------------------------
 
 void Floorplanner::FastSA() {
-    const double P = 0.95;
+    const double P = 0.99;
+    const double r = 0.9;
     const double init_T =
-        average_uphill_cost_ / (-1 * log(P));
+            average_uphill_cost_ / (-1 * log(P));
 
+    log() << "Init cost:  " << average_uphill_cost_ << endl;
+
+    log() << "Init temperature:  " << init_T << endl;
     // TODO: solution space
-    const int num_perturbations = database->nMacros * 40;
+    const int num_perturbations = database->nMacros * database->nMacros;
 
-    const double stop_T = init_T / 1.0e50;
+    const double stop_T = init_T / 1.0e15;
     const double stop_accept_rate = 0.01;
 
     const double alpha = alpha_;
     const double beta = (1 - alpha);
-    const double adaptive_alpha_base = alpha / 4.0;
-    const double adaptive_beta_base = beta / 4.0;
+    const double adaptive_alpha_base = alpha/4;
+    const double adaptive_beta_base = beta/4;
     const int c = 100;
     const int k = 7;
 
     Floorplan floorplan(best_floorplan_);
-    floorplan.Pack();
+    floorplan.PackInt();
 
     double adaptive_alpha = adaptive_alpha_base;
     double adaptive_beta = adaptive_beta_base;
     double best_cost = ComputeCost(floorplan, adaptive_alpha, adaptive_beta);
     double last_cost = best_cost;
     double T = init_T;
+    utils::timer runtime;
+    double run_time = 0;
+    double p ;
     int num_iteration = 0;
     // 1. Outter loop: T
     while (T > stop_T) {
         num_iteration++;
 
+        int num_M = 0;
         double total_delta_cost = 0.0;
         int num_accepted_floorplans = 0;
         int num_feasible_floorplans = 0;
+
+
+        // adapt new values
+        last_cost =
+                ComputeCost(floorplan, adaptive_alpha, adaptive_beta);
 
         // 2. Inner loop: solution space
         for (int i = 0; i < num_perturbations; ++i) {
             // 1. rotate
             // 2. swap
             // 3. delete and insert
+            num_M++;
             Floorplan new_floorplan(floorplan);
+
             new_floorplan.Perturb();
-            new_floorplan.Pack();
+            new_floorplan.PackInt();
 
             const double cost =
                 ComputeCost(new_floorplan, adaptive_alpha, adaptive_beta);
             const double delta_cost = cost - last_cost;
-            const double p = exp(-1 * delta_cost / T);
+            
+            p = exp(-1 * delta_cost / T);
+            // log() << delta_cost << " | " << T << endl;
+            // log() << p << endl;
             if ((delta_cost < 0) ||
                     (rand() / static_cast<double>(RAND_MAX) < p)) 
-            {
+            {   
+                // if(delta_cost==0){
+                //     floorplan.write(fp_path_);
+                //     new_floorplan.write("/data/ssd/bqfu/hw/fp/output/n100.floorplan");
+                // }
+                // log() << delta_cost << ' ' << cost << " | " << last_cost << endl;
+                
                 total_delta_cost += delta_cost;
-
                 num_accepted_floorplans++;
                 floorplan = new_floorplan;
                 last_cost = cost;
@@ -209,27 +219,55 @@ void Floorplanner::FastSA() {
                         best_cost = cost;
                     }
                 }
-            }
+                else {
+                    if (cost < best_cost) {
+                        best_floorplan_invalid_ = new_floorplan;
+                        best_cost = cost;
+                    }
+                }
+            } 
         } //END FOR
-
+        double run_time = runtime.elapsed();
+        cout << "========== total time: " << run_time << " s ==========\n";
         if (is_verbose_) {
-            log() << "  num_iteration: " << num_iteration << endl;
-            log() << "    temperature: " << T << endl;
+            log() << "--------------- " << num_iteration << " ---------------" << endl;
+            log() << "    Moves:    " << num_M << endl;
+            log() << "    T:    " << T << endl;
+            log() << "    stop T:    " << stop_T << endl;
             log() << "    total_delta_cost: " << total_delta_cost << endl;
-            log() << "    num_accepted_floorplans: " << num_accepted_floorplans
+            log() << "    num_accepted_floorplans:  " << num_accepted_floorplans
                 << endl;
-            log() << "    num_feasible_floorplans: " << num_feasible_floorplans
+            log() << "    num_feasible_floorplans:  " << num_feasible_floorplans
                 << endl;
-            log() << "    num_perturbations: " << num_perturbations << endl;
             log() << "    adaptive_alpha: " << adaptive_alpha
                 << "\tadaptive_beta: " << adaptive_beta << endl;
             log() << "    Best area: " << best_floorplan_.area()
                 << "\tBest wirelength: " << best_floorplan_.wirelength() << endl;
         }
 
-        if (num_accepted_floorplans / static_cast<double>(num_perturbations) <
-            stop_accept_rate) 
-            break;
+        // if (num_accepted_floorplans / static_cast<double>(num_perturbations) <
+        //     stop_accept_rate) 
+        //     break;
+
+        // double solution_change = (num_feasible_floorplans / 
+        //             static_cast<double>(num_accepted_floorplans + 1e-5));
+
+        // adaptive_alpha = adaptive_alpha * (1 - solution_change);
+        // adaptive_beta = 1 - adaptive_alpha;
+
+        // if (true){
+        //     const double average_delta_cost = abs(total_delta_cost / num_perturbations);
+        //     if (num_iteration >= 1 && num_iteration < k) {
+        //         T =
+        //             init_T * average_delta_cost / (num_iteration + 1) / c;
+        //     } 
+        //     else {
+        //         T =
+        //             init_T * average_delta_cost / (num_iteration + 1);
+        //     }
+        // }
+        // else
+        //     T*=r;
 
         adaptive_alpha =
             adaptive_alpha_base +
@@ -241,36 +279,51 @@ void Floorplanner::FastSA() {
                 (num_feasible_floorplans / static_cast<double>(num_perturbations));
 
         const double average_delta_cost = abs(total_delta_cost / num_perturbations);
-        if (num_iteration >= 1 && num_iteration < k) {
-            T =
-                init_T * average_delta_cost / (num_iteration + 1) / c;
-        } 
-        else {
-            T =
-                init_T * average_delta_cost / (num_iteration + 1);
+        if (true)
+        {
+                if (num_iteration >= 1 && num_iteration < k) {
+                T =
+                    init_T * average_delta_cost / (num_iteration + 1) / c;
+            } 
+            else {
+                T =
+                    init_T * average_delta_cost / (num_iteration + 1);
+            }
         }
+        else
+            T*=r;
     } //END WHILE
+
+    log() << "    T:    " << T << endl;
+    log() << "    stop T:    " << stop_T << endl;
+    
+    if (best_floorplan_.area() == 0) {
+        log() << "No feasible solution\n";
+        log() << fp_path_ << endl;
+        best_floorplan_invalid_.PackInt();
+        best_floorplan_invalid_.write(fp_path_);
+        best_floorplan_invalid_.Pack();
+        best_floorplan_invalid_.write("/data/ssd/bqfu/hw/fp/output/n100.floorplan");
+    }
+    else{
+        best_floorplan_.PackInt();
+        best_floorplan_.write(fp_path_);
+        best_floorplan_.Pack();
+        best_floorplan_.write("/data/ssd/bqfu/hw/fp/output/n100.floorplan");
+    }
 } //END MODULE
 
 //---------------------------------------------------------------------
 
 void Floorplanner::Run() {
     if (sa_mode_ == "classical") {
-        // int nth_sa = 0;
-        // do {
-        //     ++nth_sa;
-        //     if (is_verbose_) {
-        //         log() << nth_sa << " th SA" << endl;
-        //     }
-
-        //     SA();
-        // } while (best_floorplan_.area() == 0.0);
         SA();
     } 
     else if (sa_mode_ == "fast") {
-        int nth_fsa = 0;
+        init();
+        int nth_fsa = 1;
         do {
-            ++nth_fsa;
+            nth_fsa++;
             if (is_verbose_) {
                 log() << nth_fsa << " th Fast SA" << endl;
             }

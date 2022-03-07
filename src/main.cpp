@@ -38,10 +38,10 @@ void partition(char* argv[]){
 
     // fp::Floorplan fp(&database);
 
-    fp::Floorplanner fp(&database, 0.5, "classical", true, fp_path);
+    fp::Floorplanner fp(&database, 0.1, "fast", true, fp_path);
     fp.Run();
 
-    fp.write(fp_path);
+    // fp.write(fp_path);
     
 
     // database.readBSCell(blockFile);
