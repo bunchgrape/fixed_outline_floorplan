@@ -131,20 +131,20 @@ void Floorplanner::FastSA() {
     const double P = 0.99;
     const double r = 0.9;
     const double init_T =
-            average_uphill_cost_ / (-1 * log(P));
+            average_uphill_cost_ / (-1 * log(P)) * 2;
 
     log() << "Init cost:  " << average_uphill_cost_ << endl;
-
     log() << "Init temperature:  " << init_T << endl;
+
     // TODO: solution space
     const int num_perturbations = database->nMacros * database->nMacros;
 
     const double stop_T = init_T / 1.0e15;
     const double stop_accept_rate = 0.01;
     
-    double adaptive_alpha_base = alpha_ / 2;
-    double adaptive_beta_base = beta_ / 2;
-    const int c = 10;
+    double adaptive_alpha_base = alpha_ ;
+    double adaptive_beta_base = beta_ ;
+    const int c = 100;
     const int k = 21;
 
     Floorplan floorplan(best_floorplan_);
@@ -202,8 +202,7 @@ void Floorplanner::FastSA() {
                     new_floorplan.height() <= outline_height) 
                 {
                     num_feasible_floorplans++;
-                    if (cost < best_cost ||
-                        new_floorplan.wirelength() < best_floorplan_.wirelength()) {
+                    if (cost < best_cost) {
                         best_floorplan_ = new_floorplan;
                         best_cost = cost;
                     }
@@ -242,23 +241,17 @@ void Floorplanner::FastSA() {
         //     stop_accept_rate) 
         //     break;
 
-        // adaptive_alpha =
-        //     adaptive_alpha_base +
-        //     (alpha_ - adaptive_alpha_base) *
-        //         (num_feasible_floorplans / static_cast<double>(num_perturbations));
-        // adaptive_beta =
-        //     adaptive_beta_base +
-        //     (beta_ - adaptive_beta_base) *
-        //         (num_feasible_floorplans / static_cast<double>(num_perturbations));
+        adaptive_alpha =
+            adaptive_alpha_base +
+            (alpha_ * 4 - adaptive_alpha_base) *
+                (num_feasible_floorplans / static_cast<double>(num_perturbations));
+        adaptive_beta =
+            adaptive_beta_base +
+            (beta_ * 4 - adaptive_beta_base) *
+                (num_feasible_floorplans / static_cast<double>(num_perturbations));
         
         double sol_coef = (num_feasible_floorplans 
                     / static_cast<double>(num_perturbations) );
-        // if (sol_coef == 0 && num_iteration < k){
-        //     lambda_ *= 2;
-        // }
-        // else {
-        //     lambda_ /= 2;
-        // }
 
         const double average_delta_cost = abs(total_delta_cost / num_perturbations);
 
@@ -266,17 +259,8 @@ void Floorplanner::FastSA() {
             T = init_T * average_delta_cost / (num_iteration + 1) / c;
         } 
         else {
-            lambda_ = 1;
+            lambda_ /= 2;
             T = init_T * average_delta_cost / (num_iteration + 1);
-
-            // adaptive_alpha =
-            //     adaptive_alpha_base +
-            //     (alpha_ - adaptive_alpha_base) *
-            //         (num_feasible_floorplans / static_cast<double>(num_perturbations));
-            // adaptive_beta =
-            //     adaptive_beta_base +
-            //     (beta_ - adaptive_beta_base) *
-            //         (num_feasible_floorplans / static_cast<double>(num_perturbations));
         }
     } //END WHILE
 

@@ -88,6 +88,7 @@ void Floorplan::Perturb() {
     switch (op) {
         case 0: {
             // TODO: all rotatable?
+            // const int macro_id = rand() % num_macros;
             const int macro_id = [&]() {
             int macro_id = rand() % num_macros;
                 while (!is_macro_rotatable_by_id_[macro_id]) {

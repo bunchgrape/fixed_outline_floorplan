@@ -19,7 +19,6 @@ BStarTree::BStarTree(db::Database* database_)
     int width = database->macros[root_id_]->width();
     int inserted_cnt = 1;
 
-
     while (inserted_cnt != num_macros) {
         int node;
         do {
@@ -43,6 +42,7 @@ BStarTree::BStarTree(db::Database* database_)
         inserted_cnt++;
     }
 
+
     // int num_macros = database_->nMacros;
     // for (int i = 0; i < num_macros - 1; ++i) {
     //     nodes_[i].left_child_id_ = i + 1;
@@ -51,19 +51,6 @@ BStarTree::BStarTree(db::Database* database_)
     //     nodes_[i].parent_id_ = i - 1;
     // }
 
-    /* for (int i = 0; i < num_nodes / 2 + 1; ++i) { */
-    /*   const int right_child_id = (i + 1) * 2; */
-    /*   const int left_child_id = right_child_id - 1; */
-    /*   if (left_child_id < num_nodes) { */
-    /*     nodes_[i].left_child_id_ = left_child_id; */
-    /*   } */
-    /*   if (right_child_id < num_nodes) { */
-    /*     nodes_[i].right_child_id_ = right_child_id; */
-    /*   } */
-    /* } */
-    /* for (int i = 1; i < num_nodes; ++i) { */
-    /*   nodes_[i].parent_id_ = (i - 1) / 2; */
-    /* } */
 } //END MODULE
 
 //---------------------------------------------------------------------

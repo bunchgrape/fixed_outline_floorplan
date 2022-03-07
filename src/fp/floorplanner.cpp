@@ -33,8 +33,6 @@ Floorplanner::Floorplanner(db::Database* database_, double alpha,
     average_area_ = area;
     average_wirelength_ = wirelength;
 
-    double adaptive_alpha = alpha_ / 2;
-    double adaptive_beta = (1.0 - alpha_) / 2;
     double cost = ComputeCostNaive(floorplan);
     average_uphill_cost_ = cost;
 
@@ -55,8 +53,10 @@ void Floorplanner::init(){
 
     // init cost
     beta_ = 1 - alpha_;
-    double adaptive_alpha = alpha_ / 2;
-    double adaptive_beta = beta_ / 2;
+    alpha_ /= 4;
+    beta_ /= 4;
+    double adaptive_alpha = alpha_ ;
+    double adaptive_beta = beta_ ;
     double total_uphill_cost = 0.0;
     int num_uphills = 0;
     double last_cost =
@@ -162,8 +162,10 @@ double Floorplanner::ComputeCost(const Floorplan& floorplan, double alpha,
     const double normalized_area = floorplan.area() / average_area_;
     const double normalized_wirelength = floorplan.wirelength() / average_wirelength_;
 
-    const double cost = alpha * normalized_area + beta * normalized_wirelength +
-                        (1.0 - alpha - beta) * outline_penalty;
+    const double cost = (alpha * normalized_area + beta * normalized_wirelength +
+                        (1.0 - alpha - beta) * lambda_
+                        * (outline_penalty + box_penalty))
+                        / (1 + lambda_);
 
     return cost;
 }  //END MODULE
