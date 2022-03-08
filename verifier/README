@@ -4,6 +4,3 @@ Usage:
 Output:
     If your result file have something wrong, it will print "Error:.....".
     Otherwise, it will print "OK!! Your output file satisfies our basic requirements.".
-
-
-./verifier/verifier ./testcases/n100.hardblocks ./testcases/n100.nets ./testcases/n100.pl ./output/n100.floorplan 0.1
