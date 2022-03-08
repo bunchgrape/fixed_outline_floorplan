@@ -24,7 +24,7 @@ BStarTree::BStarTree(db::Database* database_)
         do {
             node = rand() % num_macros;
         } while (inserted[node]);
-        if (width > database->outline_width / 2) {
+        if (width > database->outline_width / 2 ) {
             nodes_[node].parent_id_= row_node;
             nodes_[row_node].right_child_id_ = node;
             row_node = node;
@@ -102,24 +102,6 @@ int BStarTree::right_child_id(int node_id) const {
 
 //---------------------------------------------------------------------
 
-bool BStarTree::is_visited(int node_id) const {
-  return node(node_id).is_visited_;
-} //END MODULE
-
-//---------------------------------------------------------------------
-
-void BStarTree::Visit(int node_id) { node(node_id).is_visited_ = true; } //END MODULE
-
-//---------------------------------------------------------------------
-
-void BStarTree::UnvisitAll() {
-    for (Node& node : nodes_) {
-        node.is_visited_ = false;
-    }
-} //END MODULE
-
-//---------------------------------------------------------------------
-
 void BStarTree::DeleteAndInsert(int deleted_node_id, int target_node_id,
                                 pair<int, int> inserted_positions) {
     Delete(deleted_node_id);
@@ -132,8 +114,8 @@ void BStarTree::DeleteAndInsert(int deleted_node_id, int target_node_id,
 Node::Node(int parent_id, int left_child_id, int right_child_id)
     :   parent_id_(parent_id),
         left_child_id_(left_child_id),
-        right_child_id_(right_child_id),
-        is_visited_(false) {} //END MODULE
+        right_child_id_(right_child_id)
+        {} //END MODULE
 
 //---------------------------------------------------------------------
 

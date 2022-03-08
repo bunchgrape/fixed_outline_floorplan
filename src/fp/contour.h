@@ -20,7 +20,6 @@ public:
     std::pair<db::Point, db::Point> Update(double x, double width, double height);
 
 private:
-    double FindMaxYBetween(double x_begin, double x_end) const;
 
     double max_y_;
     std::list<db::Point> coordinates_;

@@ -1,6 +1,6 @@
 #include "global.h"
 #include "db/Database.h"
-#include "fp/floorplanner.h"
+#include "fp/floorplan.h"
 
 void signalHandler(int signum) {
     std::cout << "Signal (" << signum << ") received. Exiting...\n";
@@ -26,29 +26,28 @@ void partition(char* argv[]){
     std::string prefix = blockFile.substr(0,blockFile.find_last_of('.'));
     std::string design = prefix.substr(prefix.find_last_of('/'));
     
+
+    utils::timer runtime;
+
     db::Database database;
-
     database.designName = design;
-
     database.read(blockFile, netFile, plFile);
     database.init(ratio);
 
-    // database.recall_design();
-    // exit(1);
+    // io time
 
-    // fp::Floorplan fp(&database);
 
-    fp::Floorplanner fp(&database, 0.1, "fast", true, fp_path);
+    fp::Floorplan fp(&database, 0.9, "fast", false, fp_path);
+    double io_time = runtime.elapsed();
+    
     fp.Run();
 
+    // runtime
+    double exe_time = runtime.elapsed();
+    log() << "========== IO time: " << io_time << " s ==========\n";
+    log() << "========== Execution time: " << exe_time - io_time << " s ==========\n\n\n";
+
     // fp.write(fp_path);
-    
-
-    // database.readBSCell(blockFile);
-    // database.readBSNets(netFile);
-    // database.readBSPl(plFile);
-
-    log() << "-----------finish I/O-------------" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -57,13 +56,7 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
     srand (time(NULL));
-    // utils::timer runtime;
-    // for (int i = 0; i < 885 ; i++){
 
-    // }
-    // double pack_time = runtime.elapsed();
-    // cout << "========== Pack time: " << pack_time << " s ==========\n\n\n";
-    // exit(1);
     std::cout << std::boolalpha;  // set std::boolalpha to std::cout
     
     log() << "-----------start-------------" << std::endl;

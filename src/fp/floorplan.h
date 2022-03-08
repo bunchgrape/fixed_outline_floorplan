@@ -1,44 +1,52 @@
 #include "global.h"
 #include "db/Database.h"
 
-#include "b_star_tree.h"
-#include "contour.h"
+#include "fp_pack.h"
 
 namespace fp {
 
 class Floorplan {
 public:
-    
-    Floorplan(db::Database* database_);
+    Floorplan(db::Database* database_, double alpha,
+                const std::string& sa_mode, bool is_verbose,
+                const string fp_path = " ");
+
     db::Database* database;
 
-    Contour contour;
+    string fp_path_;
 
-    int num_macros() const;
-    double width() const;
-    double height() const;
-    double area() const;
-    double wirelength() const;
-    const pair<db::Point, db::Point>& macro_bounding_box(int macro_id) const;
-    vector<db::pin> macro_pins;
-
-    void Perturb();
-    void Pack();
-    void PackInt(bool print = false);
-    void print();
+    const Packer& best_floorplan() const;
 
     void write(const string& output_path);
+    void init();
+    void Run();
 
-    vector<int> macro_id_by_node_id_;
 private:
-    double width_;
-    double height_;
-    double wirelength_;
-    BStarTree b_star_tree_;
-    vector<bool> is_macro_rotated_by_id_;
-    vector<bool> is_macro_rotatable_by_id_;
-    vector<pair<db::Point, db::Point>> macro_bounding_box_by_id_;
-    void traverseTree(int cur_node, bool left, bool print = false) ;
+    void SA();
+    void FastSA();
+
+    double Calc_Cost_Naive(const Packer& floorplan) const;
+    double Calc_Cost(const Packer& floorplan, double alpha,
+                        double beta) const;
+
+    double alpha_;
+    double beta_;
+    double lambda_;
+    double balance_ = 0.5;
+
+    bool flag_ = true;
+
+    std::string sa_mode_;
+    bool is_verbose_;
+    double min_area_;
+    double max_area_;
+    double min_wirelength_;
+    double max_wirelength_;
+    double average_area_;
+    double average_wirelength_;
+    double average_uphill_cost_;
+    Packer best_floorplan_;
+    Packer best_floorplan_invalid_;
 };
 
 }

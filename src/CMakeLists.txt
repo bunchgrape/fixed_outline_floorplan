@@ -6,7 +6,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 # Message
-message(STATUS "CENG 5270 hw1")
+message(STATUS "CENG 5270 hw2")
 message(STATUS ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS ${PROJECT_SOURCE_DIR})
 
@@ -14,7 +14,7 @@ message(STATUS ${PROJECT_SOURCE_DIR})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Project's name
-project(par)
+project(hw2)
 
 # Set the output folder where your program will be created
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -53,7 +53,7 @@ file(GLOB_RECURSE SRC_FILES
 # Targets #
 ###########
 
-add_executable(par ${SRC_FILES})
+add_executable(hw2 ${SRC_FILES})
 
 #######################
 # Include Directories #
@@ -66,8 +66,8 @@ include_directories(${PATH_SRC})
 #################
 
 # TODO: set static under release mode only
-set_target_properties(par PROPERTIES LINK_FLAGS "-static -Wl,--whole-archive -rdynamic -lpthread -Wl,--no-whole-archive")
+set_target_properties(hw2 PROPERTIES LINK_FLAGS "-static -Wl,--whole-archive -rdynamic -lpthread -Wl,--no-whole-archive")
 
 # Boost
-target_include_directories(par PUBLIC ${Boost_INCLUDE_DIR})
-target_link_libraries(par ${Boost_LIBRARIES})
+target_include_directories(hw2 PUBLIC ${Boost_INCLUDE_DIR})
+target_link_libraries(hw2 ${Boost_LIBRARIES})
