@@ -3,7 +3,7 @@
 ## Build
 ```
 cd build 
-cmake ../src && cmake --build ./ && mv hw2 ../bin/
+cmake ../ && cmake --build ./
 ```
 
 ## Run
